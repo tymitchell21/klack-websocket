@@ -3,6 +3,8 @@ const messagesDiv = document.getElementById("messageslist");
 const textarea = document.getElementById("newmessage");
 const ding = new Audio("typewriter_ding.m4a");
 
+const socket = io.connect('http://localhost:3000')
+
 // this will be the list of all messages displayed on the client
 let messages = [{ timestamp: 0 }];
 
@@ -41,54 +43,46 @@ function scrollMessages() {
 }
 
 function fetchMessages() {
-  fetch("/messages?for=" + encodeURIComponent(name))
-    .then(response => response.json())
-    .then(data => {
-      // if already scrolled to bottom, do so again after adding messages
-      const shouldScroll = scrolledToBottom()
-      var shouldDing = false
-
-      listUsers(data.users)
-
-      // examine all received messages, add those newer than the last one shown
-      for (let i = 0; i < data.messages.length; i++) {
-        let msg = data.messages[i];
-        if (msg.timestamp > messages[messages.length - 1].timestamp) {
-          appendMessage(msg);
-          shouldDing = true;
-        }
-      }
-      if (shouldScroll && shouldDing) scrollMessages()
-      if (shouldDing) ding.play()
-
-      // poll again after waiting 5 seconds
-      setTimeout(fetchMessages, 5000)
-    });
+  socket.emit('messages', name)
+  setTimeout(fetchMessages, 5000)
 }
 
 document.getElementById("newmessage").addEventListener("keypress", event => {
   // if the key pressed was enter (and not shift enter), post the message.
   if (event.keyCode === 13 && !event.shiftKey) {
     textarea.disabled = true;
-    const postRequestOptions = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ sender: name, message: textarea.value })
-    };
-    fetch("/messages", postRequestOptions)
-      .then(response => response.json())
-      .then(msg => {
-        appendMessage(msg)
-        scrollMessages()
 
-        // reset the textarea
-        textarea.value = ""
-        textarea.disabled = false
-        textarea.focus()
-      })
+    socket.emit('message', { 
+      sender: name,
+      message: textarea.value 
+    })
   }
+})
+
+socket.on('message', (msg) => {
+  appendMessage(msg)
+  scrollMessages()
+
+  textarea.value = ""
+  textarea.disabled = false
+  textarea.focus()
+})
+
+socket.on('messages', (data) => {
+  const shouldScroll = scrolledToBottom()
+  var shouldDing = false
+
+  listUsers(data.users)
+
+  for (let i = 0; i < data.messages.length; i++) {
+    let msg = data.messages[i];
+    if (msg.timestamp > messages[messages.length - 1].timestamp) {
+      appendMessage(msg);
+      shouldDing = true;
+    }
+  }
+  if (shouldScroll && shouldDing) scrollMessages()
+  if (shouldDing) ding.play()
 })
 
 // call on startup to populate the messages and start the polling loop
