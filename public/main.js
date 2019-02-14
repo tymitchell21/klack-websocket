@@ -5,7 +5,7 @@ const ding = new Audio("typewriter_ding.m4a");
 
 const port = 3000
 
-const socket = io.connect(`http://localhost:${port}`)
+const socket = io()
 
 // this will be the list of all messages displayed on the client
 let messages = [{ timestamp: 0 }];
