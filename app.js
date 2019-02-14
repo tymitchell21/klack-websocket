@@ -58,7 +58,7 @@ io.on('connection', (socket) => {
     io.sockets.emit('message', msg)
   })
 
-  socket.on('messages', (name) => {
+  socket.on('heartbeat', (name) => {
     const now = Date.now();
 
     const requireActiveSince = now - 15 * 1000;

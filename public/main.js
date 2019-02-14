@@ -3,7 +3,9 @@ const messagesDiv = document.getElementById("messageslist");
 const textarea = document.getElementById("newmessage");
 const ding = new Audio("typewriter_ding.m4a");
 
-const socket = io.connect('http://localhost:3000')
+const port = 3000
+
+const socket = io.connect(`http://localhost:${port}`)
 
 // this will be the list of all messages displayed on the client
 let messages = [{ timestamp: 0 }];
@@ -43,7 +45,7 @@ function scrollMessages() {
 }
 
 function fetchMessages() {
-  socket.emit('messages', name)
+  socket.emit('heartbeat', name)
   setTimeout(fetchMessages, 5000)
 }
 
